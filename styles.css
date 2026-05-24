@@ -1,0 +1,86 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #1e1e2f;
+  touch-action: none;
+  font-family: sans-serif;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  background: linear-gradient(#28344d, #171923);
+  touch-action: none;
+}
+
+#ui {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  right: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  pointer-events: none;
+  text-shadow: 2px 2px 4px black;
+  z-index: 5;
+}
+
+#startScreen,
+#gameOverScreen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.72);
+  color: white;
+  text-align: center;
+  z-index: 10;
+  touch-action: none;
+}
+
+#gameOverScreen {
+  display: none;
+}
+
+h1 {
+  margin-bottom: 8px;
+  font-size: 32px;
+}
+
+p {
+  margin: 6px 0;
+  font-size: 16px;
+}
+
+button {
+  margin-top: 20px;
+  padding: 14px 32px;
+  font-size: 20px;
+  font-weight: bold;
+  border: none;
+  border-radius: 999px;
+  background: #ffcc33;
+  color: #222;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+button:active {
+  transform: scale(0.96);
+}
+
+.hint {
+  margin-top: 12px;
+  opacity: 0.8;
+  font-size: 13px;
+}

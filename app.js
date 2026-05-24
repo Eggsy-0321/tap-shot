@@ -1,0 +1,358 @@
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const scoreText = document.getElementById("scoreText");
+const timeText = document.getElementById("timeText");
+const startScreen = document.getElementById("startScreen");
+const gameOverScreen = document.getElementById("gameOverScreen");
+const startButton = document.getElementById("startButton");
+const restartButton = document.getElementById("restartButton");
+const finalScoreText = document.getElementById("finalScoreText");
+
+let canvasWidth = 0;
+let canvasHeight = 0;
+
+let score = 0;
+let timeLeft = 60;
+let gameRunning = false;
+let lastTime = 0;
+let spawnTimer = 0;
+let elapsedTimer = 0;
+
+const targets = [];
+const effects = [];
+
+function resizeCanvas() {
+  canvasWidth = window.innerWidth;
+  canvasHeight = window.innerHeight;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = canvasWidth * dpr;
+  canvas.height = canvasHeight * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  draw();
+}
+
+function getLaneY(laneIndex) {
+  const topMargin = canvasHeight * 0.24;
+  const laneGap = canvasHeight * 0.22;
+  return topMargin + laneGap * laneIndex;
+}
+
+function chooseTargetPoint() {
+  const random = Math.random();
+
+  if (random < 0.55) {
+    return 5;
+  }
+  if (random < 0.85) {
+    return 10;
+  }
+  return 15;
+}
+
+function getTargetRadius(point) {
+  if (point === 5) return 30;
+  if (point === 10) return 25;
+  return 20;
+}
+
+function getTargetColor(point) {
+  if (point === 5) return "#66ddff";
+  if (point === 10) return "#ffcc33";
+  return "#ff6666";
+}
+
+function spawnTarget() {
+  const lane = Math.floor(Math.random() * 3);
+  const point = chooseTargetPoint();
+  const radius = getTargetRadius(point);
+
+  targets.push({
+    x: canvasWidth + 120,
+    y: getLaneY(lane),
+    lane,
+    point,
+    radius,
+    speed: 160 + Math.random() * 80
+  });
+}
+
+function startGame() {
+  if (gameRunning) return;
+
+  score = 0;
+  timeLeft = 60;
+  spawnTimer = 0;
+  elapsedTimer = 0;
+  lastTime = performance.now();
+  targets.length = 0;
+  effects.length = 0;
+
+  scoreText.textContent = "SCORE: 0";
+  timeText.textContent = "TIME: 60";
+
+  startScreen.style.display = "none";
+  gameOverScreen.style.display = "none";
+
+  gameRunning = true;
+  requestAnimationFrame(gameLoop);
+}
+
+function endGame() {
+  gameRunning = false;
+  finalScoreText.textContent = `SCORE: ${score}`;
+  gameOverScreen.style.display = "flex";
+}
+
+function update(deltaTime) {
+  elapsedTimer += deltaTime;
+  spawnTimer -= deltaTime;
+
+  if (elapsedTimer >= 1) {
+    elapsedTimer -= 1;
+    timeLeft--;
+
+    if (timeLeft < 0) {
+      timeLeft = 0;
+    }
+
+    timeText.textContent = `TIME: ${timeLeft}`;
+
+    if (timeLeft <= 0) {
+      endGame();
+      return;
+    }
+  }
+
+  if (spawnTimer <= 0) {
+    spawnTarget();
+    spawnTimer = 0.55 + Math.random() * 0.55;
+  }
+
+  for (let i = targets.length - 1; i >= 0; i--) {
+    const target = targets[i];
+    target.x -= target.speed * deltaTime;
+
+    if (target.x < -160) {
+      targets.splice(i, 1);
+    }
+  }
+
+  for (let i = effects.length - 1; i >= 0; i--) {
+    const effect = effects[i];
+    effect.life -= deltaTime;
+    effect.x += effect.vx * deltaTime;
+    effect.y += effect.vy * deltaTime;
+    effect.vy += 180 * deltaTime;
+
+    if (effect.life <= 0) {
+      effects.splice(i, 1);
+    }
+  }
+}
+
+function drawBackground() {
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+
+  ctx.fillStyle = "#1f293f";
+  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+
+  for (let i = 0; i < 3; i++) {
+    const y = getLaneY(i) + 48;
+
+    ctx.strokeStyle = "rgba(255,255,255,0.2)";
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(canvasWidth, y);
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 3;
+    for (let x = -40; x < canvasWidth + 40; x += 60) {
+      ctx.beginPath();
+      ctx.moveTo(x, y - 14);
+      ctx.lineTo(x + 26, y + 14);
+      ctx.stroke();
+    }
+  }
+
+  ctx.fillStyle = "rgba(255,255,255,0.06)";
+  ctx.font = "bold 42px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText("TARGET TRAIN", canvasWidth / 2, canvasHeight * 0.13);
+}
+
+function drawTrainCar(target) {
+  const carWidth = 105;
+  const carHeight = 42;
+  const carX = target.x - carWidth / 2;
+  const carY = target.y + 22;
+
+  ctx.fillStyle = "#6b4f3a";
+  ctx.fillRect(carX, carY, carWidth, carHeight);
+
+  ctx.strokeStyle = "#d6a35d";
+  ctx.lineWidth = 4;
+  ctx.strokeRect(carX, carY, carWidth, carHeight);
+
+  ctx.strokeStyle = "rgba(0,0,0,0.35)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(carX + carWidth * 0.33, carY);
+  ctx.lineTo(carX + carWidth * 0.33, carY + carHeight);
+  ctx.moveTo(carX + carWidth * 0.66, carY);
+  ctx.lineTo(carX + carWidth * 0.66, carY + carHeight);
+  ctx.stroke();
+
+  ctx.fillStyle = "#111";
+  ctx.beginPath();
+  ctx.arc(carX + 25, carY + carHeight + 8, 10, 0, Math.PI * 2);
+  ctx.arc(carX + carWidth - 25, carY + carHeight + 8, 10, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#777";
+  ctx.beginPath();
+  ctx.arc(carX + 25, carY + carHeight + 8, 4, 0, Math.PI * 2);
+  ctx.arc(carX + carWidth - 25, carY + carHeight + 8, 4, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawTarget(target) {
+  drawTrainCar(target);
+
+  ctx.fillStyle = getTargetColor(target.point);
+  ctx.beginPath();
+  ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "white";
+  ctx.beginPath();
+  ctx.arc(target.x, target.y, target.radius * 0.62, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = getTargetColor(target.point);
+  ctx.beginPath();
+  ctx.arc(target.x, target.y, target.radius * 0.32, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = "#222";
+  ctx.font = "bold 18px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(target.point, target.x, target.y);
+}
+
+function drawEffects() {
+  for (const effect of effects) {
+    const alpha = Math.max(effect.life / effect.maxLife, 0);
+
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = effect.color;
+    ctx.beginPath();
+    ctx.arc(effect.x, effect.y, effect.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+}
+
+function draw() {
+  if (!ctx || canvasWidth === 0 || canvasHeight === 0) return;
+
+  drawBackground();
+
+  for (const target of targets) {
+    drawTarget(target);
+  }
+
+  drawEffects();
+}
+
+function createDestroyEffect(x, y, color) {
+  for (let i = 0; i < 18; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 90 + Math.random() * 180;
+
+    effects.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: 4 + Math.random() * 5,
+      life: 0.45 + Math.random() * 0.25,
+      maxLife: 0.7,
+      color
+    });
+  }
+}
+
+function handlePointerDown(event) {
+  if (!gameRunning) return;
+
+  event.preventDefault();
+
+  const rect = canvas.getBoundingClientRect();
+  const tapX = event.clientX - rect.left;
+  const tapY = event.clientY - rect.top;
+
+  for (let i = targets.length - 1; i >= 0; i--) {
+    const target = targets[i];
+
+    const dx = tapX - target.x;
+    const dy = tapY - target.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    if (distance <= target.radius) {
+      score += target.point;
+      scoreText.textContent = `SCORE: ${score}`;
+
+      createDestroyEffect(target.x, target.y, getTargetColor(target.point));
+
+      targets.splice(i, 1);
+      break;
+    }
+  }
+}
+
+function handleStartInput(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  startGame();
+}
+
+function gameLoop(currentTime) {
+  if (!gameRunning) return;
+
+  const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.033);
+  lastTime = currentTime;
+
+  update(deltaTime);
+  draw();
+
+  if (gameRunning) {
+    requestAnimationFrame(gameLoop);
+  }
+}
+
+window.addEventListener("resize", resizeCanvas);
+canvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
+
+startButton.addEventListener("click", handleStartInput);
+startButton.addEventListener("pointerdown", handleStartInput, { passive: false });
+startButton.addEventListener("touchstart", handleStartInput, { passive: false });
+
+restartButton.addEventListener("click", handleStartInput);
+restartButton.addEventListener("pointerdown", handleStartInput, { passive: false });
+restartButton.addEventListener("touchstart", handleStartInput, { passive: false });
+
+startScreen.addEventListener("pointerdown", handleStartInput, { passive: false });
+startScreen.addEventListener("touchstart", handleStartInput, { passive: false });
+
+resizeCanvas();
+draw();
