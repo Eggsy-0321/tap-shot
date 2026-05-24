@@ -75,7 +75,8 @@ function spawnTarget() {
     lane,
     point,
     radius,
-    speed: 160 + Math.random() * 80
+    speed: 160 + Math.random() * 80,
+    targetDestroyed: false
   });
 }
 
@@ -224,6 +225,10 @@ function drawTrainCar(target) {
 function drawTarget(target) {
   drawTrainCar(target);
 
+  if (target.targetDestroyed) {
+    return;
+  }
+
   ctx.fillStyle = getTargetColor(target.point);
   ctx.beginPath();
   ctx.arc(target.x, target.y, target.radius, 0, Math.PI * 2);
@@ -300,6 +305,9 @@ function handlePointerDown(event) {
 
   for (let i = targets.length - 1; i >= 0; i--) {
     const target = targets[i];
+    if (target.targetDestroyed) {
+      continue;
+    }
 
     const dx = tapX - target.x;
     const dy = tapY - target.y;
@@ -310,8 +318,7 @@ function handlePointerDown(event) {
       scoreText.textContent = `SCORE: ${score}`;
 
       createDestroyEffect(target.x, target.y, getTargetColor(target.point));
-
-      targets.splice(i, 1);
+      target.targetDestroyed = true;
       break;
     }
   }
