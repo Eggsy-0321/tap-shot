@@ -22,6 +22,19 @@ let elapsedTimer = 0;
 const targets = [];
 const effects = [];
 const TARGET_RADIUS = 30;
+const TRAIN_IMAGE_WIDTH = 150;
+const TRAIN_IMAGE_HEIGHT = 112;
+const TRAIN_IMAGE_PATH = "assets/images/train-car-storybook.png";
+
+const trainImage = new Image();
+let isTrainImageLoaded = false;
+
+trainImage.addEventListener("load", () => {
+  isTrainImageLoaded = true;
+  draw();
+});
+
+trainImage.src = TRAIN_IMAGE_PATH;
 
 function resizeCanvas() {
   canvasWidth = window.innerWidth;
@@ -191,10 +204,15 @@ function drawBackground() {
 }
 
 function drawTrainCar(target) {
-  const carWidth = 105;
-  const carHeight = 42;
+  const carWidth = TRAIN_IMAGE_WIDTH;
+  const carHeight = TRAIN_IMAGE_HEIGHT;
   const carX = target.x - carWidth / 2;
-  const carY = target.y + 22;
+  const carY = target.y + 8;
+
+  if (isTrainImageLoaded) {
+    ctx.drawImage(trainImage, carX, carY, carWidth, carHeight);
+    return;
+  }
 
   ctx.fillStyle = "#6b4f3a";
   ctx.fillRect(carX, carY, carWidth, carHeight);
