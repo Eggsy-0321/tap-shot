@@ -25,9 +25,15 @@ const TARGET_RADIUS = 30;
 const TRAIN_IMAGE_WIDTH = 150;
 const TRAIN_IMAGE_HEIGHT = 112;
 const TRAIN_IMAGE_PATH = "assets/images/train-car-storybook.png";
+const RAIL_IMAGE_WIDTH = 2170;
+const RAIL_IMAGE_HEIGHT = 220;
+const RAIL_IMAGE_PATH = "assets/images/rail-track-storybook.png";
+const RAIL_IMAGE_RAIL_OFFSET = 0.32;
 
 const trainImage = new Image();
+const railImage = new Image();
 let isTrainImageLoaded = false;
+let isRailImageLoaded = false;
 
 trainImage.addEventListener("load", () => {
   isTrainImageLoaded = true;
@@ -35,6 +41,13 @@ trainImage.addEventListener("load", () => {
 });
 
 trainImage.src = TRAIN_IMAGE_PATH;
+
+railImage.addEventListener("load", () => {
+  isRailImageLoaded = true;
+  draw();
+});
+
+railImage.src = RAIL_IMAGE_PATH;
 
 function resizeCanvas() {
   canvasWidth = window.innerWidth;
@@ -177,22 +190,32 @@ function drawBackground() {
   ctx.fillRect(0, 0, canvasWidth, canvasHeight);
 
   for (let i = 0; i < 3; i++) {
-    const y = getLaneY(i) + 48;
+    const y = getLaneY(i) + 102;
 
-    ctx.strokeStyle = "rgba(255,255,255,0.2)";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(canvasWidth, y);
-    ctx.stroke();
+    if (isRailImageLoaded) {
+      const trackHeight = Math.min(96, canvasHeight * 0.15);
+      const trackWidth = RAIL_IMAGE_WIDTH * (trackHeight / RAIL_IMAGE_HEIGHT);
+      const trackTop = y - trackHeight * RAIL_IMAGE_RAIL_OFFSET;
 
-    ctx.strokeStyle = "rgba(255,255,255,0.12)";
-    ctx.lineWidth = 3;
-    for (let x = -40; x < canvasWidth + 40; x += 60) {
+      for (let x = -trackWidth; x < canvasWidth + trackWidth; x += trackWidth) {
+        ctx.drawImage(railImage, x, trackTop, trackWidth, trackHeight);
+      }
+    } else {
+      ctx.strokeStyle = "rgba(255,255,255,0.2)";
+      ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(x, y - 14);
-      ctx.lineTo(x + 26, y + 14);
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvasWidth, y);
       ctx.stroke();
+
+      ctx.strokeStyle = "rgba(255,255,255,0.12)";
+      ctx.lineWidth = 3;
+      for (let x = -40; x < canvasWidth + 40; x += 60) {
+        ctx.beginPath();
+        ctx.moveTo(x, y - 14);
+        ctx.lineTo(x + 26, y + 14);
+        ctx.stroke();
+      }
     }
   }
 
