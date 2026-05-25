@@ -63,6 +63,10 @@ function getTargetColor(point) {
   return "#ff6666";
 }
 
+function getTargetSpeed(point) {
+  return 140 + point * 10 + Math.random() * 40;
+}
+
 function spawnTarget() {
   const lane = Math.floor(Math.random() * 3);
   const point = chooseTargetPoint();
@@ -74,7 +78,7 @@ function spawnTarget() {
     lane,
     point,
     radius,
-    speed: 160 + Math.random() * 80,
+    speed: getTargetSpeed(point),
     targetDestroyed: false
   });
 }
