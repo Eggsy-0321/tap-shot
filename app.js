@@ -21,6 +21,7 @@ let elapsedTimer = 0;
 
 const targets = [];
 const effects = [];
+const TARGET_RADIUS = 30;
 
 function resizeCanvas() {
   canvasWidth = window.innerWidth;
@@ -53,9 +54,7 @@ function chooseTargetPoint() {
 }
 
 function getTargetRadius(point) {
-  if (point === 5) return 30;
-  if (point === 10) return 25;
-  return 20;
+  return TARGET_RADIUS;
 }
 
 function getTargetColor(point) {
