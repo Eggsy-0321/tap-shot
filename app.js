@@ -13,7 +13,7 @@ let canvasWidth = 0;
 let canvasHeight = 0;
 
 let score = 0;
-let timeLeft = 60;
+let timeLeft = 40;
 let gameRunning = false;
 let lastTime = 0;
 let spawnTimer = 0;
@@ -21,9 +21,10 @@ let elapsedTimer = 0;
 
 const targets = [];
 const effects = [];
+const GAME_DURATION_SECONDS = 40;
 const TARGET_RADIUS = 30;
-const TRAIN_IMAGE_WIDTH = 150;
-const TRAIN_IMAGE_HEIGHT = 112;
+const TRAIN_IMAGE_WIDTH = 120;
+const TRAIN_IMAGE_HEIGHT = 90;
 const TRAIN_IMAGE_PATH = "assets/images/train-car-storybook.png";
 const RAIL_IMAGE_WIDTH = 2170;
 const RAIL_IMAGE_HEIGHT = 220;
@@ -113,7 +114,7 @@ function startGame() {
   if (gameRunning) return;
 
   score = 0;
-  timeLeft = 60;
+  timeLeft = GAME_DURATION_SECONDS;
   spawnTimer = 0;
   elapsedTimer = 0;
   lastTime = performance.now();
@@ -121,7 +122,7 @@ function startGame() {
   effects.length = 0;
 
   scoreText.textContent = "SCORE: 0";
-  timeText.textContent = "TIME: 60";
+  timeText.textContent = `TIME: ${GAME_DURATION_SECONDS}`;
 
   startScreen.style.display = "none";
   gameOverScreen.style.display = "none";
@@ -230,7 +231,7 @@ function drawTrainCar(target) {
   const carWidth = TRAIN_IMAGE_WIDTH;
   const carHeight = TRAIN_IMAGE_HEIGHT;
   const carX = target.x - carWidth / 2;
-  const carY = target.y + 8;
+  const carY = target.y + 20;
 
   if (isTrainImageLoaded) {
     ctx.drawImage(trainImage, carX, carY, carWidth, carHeight);
