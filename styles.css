@@ -5,14 +5,19 @@ html, body {
   background: #1e1e2f;
   touch-action: none;
   font-family: sans-serif;
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
 }
 
 canvas {
+  position: fixed;
+  inset: 0;
   display: block;
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   background: linear-gradient(#28344d, #171923);
   touch-action: none;
 }

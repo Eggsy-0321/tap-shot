@@ -23,6 +23,10 @@ const targets = [];
 const effects = [];
 const GAME_DURATION_SECONDS = 40;
 const TARGET_RADIUS = 30;
+const MIN_TOUCH_RADIUS = 46;
+const TRAIN_HIT_PADDING_X = 24;
+const TRAIN_HIT_PADDING_TOP = 18;
+const TRAIN_HIT_PADDING_BOTTOM = 34;
 const TRAIN_IMAGE_WIDTH = 120;
 const TRAIN_IMAGE_HEIGHT = 90;
 const TRAIN_IMAGE_PATH = "assets/images/train-car-storybook.png";
@@ -51,8 +55,10 @@ railImage.addEventListener("load", () => {
 railImage.src = RAIL_IMAGE_PATH;
 
 function resizeCanvas() {
-  canvasWidth = window.innerWidth;
-  canvasHeight = window.innerHeight;
+  const rect = canvas.getBoundingClientRect();
+
+  canvasWidth = rect.width || window.innerWidth;
+  canvasHeight = rect.height || window.innerHeight;
 
   const dpr = window.devicePixelRatio || 1;
   canvas.width = canvasWidth * dpr;
@@ -339,14 +345,41 @@ function createDestroyEffect(x, y, color) {
   }
 }
 
-function handlePointerDown(event) {
+function getInputPoint(event) {
+  const rect = canvas.getBoundingClientRect();
+  const source = event.changedTouches ? event.changedTouches[0] : event;
+
+  return {
+    x: source.clientX - rect.left,
+    y: source.clientY - rect.top
+  };
+}
+
+function isTargetHit(tapX, tapY, target) {
+  const dx = tapX - target.x;
+  const dy = tapY - target.y;
+  const touchRadius = Math.max(target.radius, MIN_TOUCH_RADIUS);
+  const isTargetCircleHit = dx * dx + dy * dy <= touchRadius * touchRadius;
+
+  const carLeft = target.x - TRAIN_IMAGE_WIDTH / 2 - TRAIN_HIT_PADDING_X;
+  const carRight = target.x + TRAIN_IMAGE_WIDTH / 2 + TRAIN_HIT_PADDING_X;
+  const carTop = target.y - target.radius - TRAIN_HIT_PADDING_TOP;
+  const carBottom = target.y + 20 + TRAIN_IMAGE_HEIGHT + TRAIN_HIT_PADDING_BOTTOM;
+  const isTrainBodyHit =
+    tapX >= carLeft &&
+    tapX <= carRight &&
+    tapY >= carTop &&
+    tapY <= carBottom;
+
+  return isTargetCircleHit || isTrainBodyHit;
+}
+
+function handleGameInput(event) {
   if (!gameRunning) return;
 
   event.preventDefault();
 
-  const rect = canvas.getBoundingClientRect();
-  const tapX = event.clientX - rect.left;
-  const tapY = event.clientY - rect.top;
+  const { x: tapX, y: tapY } = getInputPoint(event);
 
   for (let i = targets.length - 1; i >= 0; i--) {
     const target = targets[i];
@@ -354,11 +387,7 @@ function handlePointerDown(event) {
       continue;
     }
 
-    const dx = tapX - target.x;
-    const dy = tapY - target.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-
-    if (distance <= target.radius) {
+    if (isTargetHit(tapX, tapY, target)) {
       score += target.point;
       scoreText.textContent = `SCORE: ${score}`;
 
@@ -393,7 +422,14 @@ function gameLoop(currentTime) {
 }
 
 window.addEventListener("resize", resizeCanvas);
-canvas.addEventListener("pointerdown", handlePointerDown, { passive: false });
+window.addEventListener("orientationchange", resizeCanvas);
+
+if (window.PointerEvent) {
+  canvas.addEventListener("pointerdown", handleGameInput, { passive: false });
+} else {
+  canvas.addEventListener("touchstart", handleGameInput, { passive: false });
+  canvas.addEventListener("mousedown", handleGameInput, { passive: false });
+}
 
 startButton.addEventListener("click", handleStartInput);
 startButton.addEventListener("pointerdown", handleStartInput, { passive: false });
