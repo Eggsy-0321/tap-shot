@@ -7,8 +7,10 @@ const ui = document.getElementById("ui");
 const startScreen = document.getElementById("startScreen");
 const countdownScreen = document.getElementById("countdownScreen");
 const countdownText = document.getElementById("countdownText");
+const pauseScreen = document.getElementById("pauseScreen");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const startButton = document.getElementById("startButton");
+const pauseButton = document.getElementById("pauseButton");
 const restartButton = document.getElementById("restartButton");
 const finalScoreText = document.getElementById("finalScoreText");
 
@@ -18,6 +20,7 @@ let canvasHeight = 0;
 let score = 0;
 let timeLeft = 40;
 let gameRunning = false;
+let gamePaused = false;
 let countdownRunning = false;
 let lastTime = 0;
 let spawnTimer = 0;
@@ -125,6 +128,7 @@ function startGame() {
 
   score = 0;
   timeLeft = GAME_DURATION_SECONDS;
+  gamePaused = false;
   spawnTimer = 0;
   elapsedTimer = 0;
   lastTime = performance.now();
@@ -136,8 +140,11 @@ function startGame() {
 
   startScreen.style.display = "none";
   countdownScreen.style.display = "none";
+  pauseScreen.style.display = "none";
   gameOverScreen.style.display = "none";
   ui.style.display = "flex";
+  pauseButton.style.display = "block";
+  pauseButton.setAttribute("aria-label", "ゲームを一時停止");
 
   gameRunning = true;
   requestAnimationFrame(gameLoop);
@@ -145,8 +152,42 @@ function startGame() {
 
 function endGame() {
   gameRunning = false;
+  gamePaused = false;
+  pauseScreen.style.display = "none";
+  pauseButton.style.display = "none";
   finalScoreText.textContent = `SCORE: ${score}`;
   gameOverScreen.style.display = "flex";
+}
+
+function pauseGame() {
+  if (!gameRunning || gamePaused) return;
+
+  gamePaused = true;
+  pauseScreen.style.display = "flex";
+  pauseButton.setAttribute("aria-label", "ゲームを再開");
+}
+
+function resumeGame() {
+  if (!gameRunning || !gamePaused) return;
+
+  gamePaused = false;
+  pauseScreen.style.display = "none";
+  pauseButton.setAttribute("aria-label", "ゲームを一時停止");
+  lastTime = performance.now();
+  requestAnimationFrame(gameLoop);
+}
+
+function togglePause(event) {
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  if (gamePaused) {
+    resumeGame();
+  } else {
+    pauseGame();
+  }
 }
 
 function update(deltaTime) {
@@ -381,7 +422,7 @@ function isTargetHit(tapX, tapY, target) {
 }
 
 function handleGameInput(event) {
-  if (!gameRunning) return;
+  if (!gameRunning || gamePaused) return;
 
   event.preventDefault();
 
@@ -421,6 +462,8 @@ function startCountdown() {
   gameOverScreen.style.display = "none";
   countdownScreen.style.display = "flex";
   ui.style.display = "flex";
+  pauseScreen.style.display = "none";
+  pauseButton.style.display = "none";
   scoreText.textContent = "SCORE: 0";
   timeText.textContent = `TIME: ${GAME_DURATION_SECONDS}`;
 
@@ -445,7 +488,7 @@ function startCountdown() {
 }
 
 function gameLoop(currentTime) {
-  if (!gameRunning) return;
+  if (!gameRunning || gamePaused) return;
 
   const deltaTime = Math.min((currentTime - lastTime) / 1000, 0.033);
   lastTime = currentTime;
@@ -472,6 +515,13 @@ if (startButton) {
   startButton.addEventListener("click", handleStartInput);
   startButton.addEventListener("pointerdown", handleStartInput, { passive: false });
   startButton.addEventListener("touchstart", handleStartInput, { passive: false });
+}
+
+if (window.PointerEvent) {
+  pauseButton.addEventListener("pointerdown", togglePause, { passive: false });
+} else {
+  pauseButton.addEventListener("touchstart", togglePause, { passive: false });
+  pauseButton.addEventListener("mousedown", togglePause, { passive: false });
 }
 
 restartButton.addEventListener("click", handleStartInput);
