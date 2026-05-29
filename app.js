@@ -3,7 +3,10 @@ const ctx = canvas.getContext("2d");
 
 const scoreText = document.getElementById("scoreText");
 const timeText = document.getElementById("timeText");
+const ui = document.getElementById("ui");
 const startScreen = document.getElementById("startScreen");
+const countdownScreen = document.getElementById("countdownScreen");
+const countdownText = document.getElementById("countdownText");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const startButton = document.getElementById("startButton");
 const restartButton = document.getElementById("restartButton");
@@ -15,6 +18,7 @@ let canvasHeight = 0;
 let score = 0;
 let timeLeft = 40;
 let gameRunning = false;
+let countdownRunning = false;
 let lastTime = 0;
 let spawnTimer = 0;
 let elapsedTimer = 0;
@@ -131,7 +135,9 @@ function startGame() {
   timeText.textContent = `TIME: ${GAME_DURATION_SECONDS}`;
 
   startScreen.style.display = "none";
+  countdownScreen.style.display = "none";
   gameOverScreen.style.display = "none";
+  ui.style.display = "flex";
 
   gameRunning = true;
   requestAnimationFrame(gameLoop);
@@ -404,7 +410,38 @@ function handleStartInput(event) {
     event.stopPropagation();
   }
 
-  startGame();
+  startCountdown();
+}
+
+function startCountdown() {
+  if (gameRunning || countdownRunning) return;
+
+  countdownRunning = true;
+  startScreen.style.display = "none";
+  gameOverScreen.style.display = "none";
+  countdownScreen.style.display = "flex";
+  ui.style.display = "flex";
+  scoreText.textContent = "SCORE: 0";
+  timeText.textContent = `TIME: ${GAME_DURATION_SECONDS}`;
+
+  const countdownSteps = ["3", "2", "1", "START"];
+  let stepIndex = 0;
+  countdownText.textContent = countdownSteps[stepIndex];
+
+  const showNextStep = () => {
+    stepIndex++;
+
+    if (stepIndex >= countdownSteps.length) {
+      countdownRunning = false;
+      startGame();
+      return;
+    }
+
+    countdownText.textContent = countdownSteps[stepIndex];
+    window.setTimeout(showNextStep, 1000);
+  };
+
+  window.setTimeout(showNextStep, 1000);
 }
 
 function gameLoop(currentTime) {
@@ -431,9 +468,11 @@ if (window.PointerEvent) {
   canvas.addEventListener("mousedown", handleGameInput, { passive: false });
 }
 
-startButton.addEventListener("click", handleStartInput);
-startButton.addEventListener("pointerdown", handleStartInput, { passive: false });
-startButton.addEventListener("touchstart", handleStartInput, { passive: false });
+if (startButton) {
+  startButton.addEventListener("click", handleStartInput);
+  startButton.addEventListener("pointerdown", handleStartInput, { passive: false });
+  startButton.addEventListener("touchstart", handleStartInput, { passive: false });
+}
 
 restartButton.addEventListener("click", handleStartInput);
 restartButton.addEventListener("pointerdown", handleStartInput, { passive: false });
