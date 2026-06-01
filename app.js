@@ -8,6 +8,8 @@ const startScreen = document.getElementById("startScreen");
 const countdownScreen = document.getElementById("countdownScreen");
 const countdownText = document.getElementById("countdownText");
 const pauseScreen = document.getElementById("pauseScreen");
+const curtainTransition = document.getElementById("curtainTransition");
+const curtainImage = curtainTransition.querySelector("img");
 const gameOverScreen = document.getElementById("gameOverScreen");
 const startButton = document.getElementById("startButton");
 const pauseButton = document.getElementById("pauseButton");
@@ -22,6 +24,7 @@ let timeLeft = 40;
 let gameRunning = false;
 let gamePaused = false;
 let countdownRunning = false;
+let curtainClosing = false;
 let lastTime = 0;
 let spawnTimer = 0;
 let elapsedTimer = 0;
@@ -39,13 +42,16 @@ const TRAIN_IMAGE_HEIGHT = 90;
 const TRAIN_IMAGE_PATH = "assets/images/train-car-storybook.png";
 const RAIL_IMAGE_WIDTH = 2170;
 const RAIL_IMAGE_HEIGHT = 220;
-const RAIL_IMAGE_PATH = "assets/images/rail-track-storybook.png";
+const RAIL_IMAGE_PATH = "assets/images/rail-track-transparent.png";
 const RAIL_IMAGE_RAIL_OFFSET = 0.32;
+const BACKGROUND_IMAGE_PATH = "assets/images/wilderness-background.png";
 
 const trainImage = new Image();
 const railImage = new Image();
+const backgroundImage = new Image();
 let isTrainImageLoaded = false;
 let isRailImageLoaded = false;
+let isBackgroundImageLoaded = false;
 
 trainImage.addEventListener("load", () => {
   isTrainImageLoaded = true;
@@ -60,6 +66,13 @@ railImage.addEventListener("load", () => {
 });
 
 railImage.src = RAIL_IMAGE_PATH;
+
+backgroundImage.addEventListener("load", () => {
+  isBackgroundImageLoaded = true;
+  draw();
+});
+
+backgroundImage.src = BACKGROUND_IMAGE_PATH;
 
 function resizeCanvas() {
   const rect = canvas.getBoundingClientRect();
@@ -76,8 +89,8 @@ function resizeCanvas() {
 }
 
 function getLaneY(laneIndex) {
-  const topMargin = canvasHeight * 0.24;
-  const laneGap = canvasHeight * 0.22;
+  const topMargin = canvasHeight * 0.475;
+  const laneGap = canvasHeight * 0.15;
   return topMargin + laneGap * laneIndex;
 }
 
@@ -141,6 +154,7 @@ function startGame() {
   startScreen.style.display = "none";
   countdownScreen.style.display = "none";
   pauseScreen.style.display = "none";
+  resetCurtain();
   gameOverScreen.style.display = "none";
   ui.style.display = "flex";
   pauseButton.style.display = "block";
@@ -153,9 +167,23 @@ function startGame() {
 function endGame() {
   gameRunning = false;
   gamePaused = false;
+  curtainClosing = true;
   pauseScreen.style.display = "none";
   pauseButton.style.display = "none";
   finalScoreText.textContent = `SCORE: ${score}`;
+  curtainTransition.classList.add("isClosing");
+}
+
+function resetCurtain() {
+  curtainClosing = false;
+  curtainTransition.classList.remove("isClosing");
+}
+
+function showGameOverScreen() {
+  if (!curtainClosing) return;
+
+  curtainClosing = false;
+  ui.style.display = "none";
   gameOverScreen.style.display = "flex";
 }
 
@@ -240,8 +268,25 @@ function update(deltaTime) {
 function drawBackground() {
   ctx.clearRect(0, 0, canvasWidth, canvasHeight);
 
-  ctx.fillStyle = "#1f293f";
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  if (isBackgroundImageLoaded) {
+    const imageScale = Math.max(
+      canvasWidth / backgroundImage.naturalWidth,
+      canvasHeight / backgroundImage.naturalHeight
+    );
+    const imageWidth = backgroundImage.naturalWidth * imageScale;
+    const imageHeight = backgroundImage.naturalHeight * imageScale;
+
+    ctx.drawImage(
+      backgroundImage,
+      (canvasWidth - imageWidth) / 2,
+      (canvasHeight - imageHeight) / 2,
+      imageWidth,
+      imageHeight
+    );
+  } else {
+    ctx.fillStyle = "#1f293f";
+    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+  }
 
   for (let i = 0; i < 3; i++) {
     const y = getLaneY(i) + 102;
@@ -455,10 +500,11 @@ function handleStartInput(event) {
 }
 
 function startCountdown() {
-  if (gameRunning || countdownRunning) return;
+  if (gameRunning || countdownRunning || curtainClosing) return;
 
   countdownRunning = true;
   startScreen.style.display = "none";
+  resetCurtain();
   gameOverScreen.style.display = "none";
   countdownScreen.style.display = "flex";
   ui.style.display = "flex";
@@ -527,6 +573,7 @@ if (window.PointerEvent) {
 restartButton.addEventListener("click", handleStartInput);
 restartButton.addEventListener("pointerdown", handleStartInput, { passive: false });
 restartButton.addEventListener("touchstart", handleStartInput, { passive: false });
+curtainImage.addEventListener("animationend", showGameOverScreen);
 
 startScreen.addEventListener("pointerdown", handleStartInput, { passive: false });
 startScreen.addEventListener("touchstart", handleStartInput, { passive: false });
